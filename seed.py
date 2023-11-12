@@ -14,16 +14,20 @@ session = Session(engine)
 
 groups = [Group(name=f'Group {group_id}') for group_id in range(1, 4)]
 session.add_all(groups)
+session.commit()
 
 teachers = [Teacher(name=fake.name()) for _ in range(5)]
 session.add_all(teachers)
+session.commit()
 
 for _ in range(50):
     student = Student(name=fake.name(), group_id=random.randint(1, 3))
     session.add(student)
+session.commit()
 
 subjects = [Subject(name=fake.job(), teacher_id=random.randint(1, 5)) for _ in range(8)]
 session.add_all(subjects)
+session.commit()
 
 for student_id in range(1, 51):
     for subject_id in range(1, 9):
@@ -34,6 +38,6 @@ for student_id in range(1, 51):
             date=fake.date_between(start_date='-1y', end_date='today')
         )
         session.add(grade)
-
+        
 session.commit()
 session.close()

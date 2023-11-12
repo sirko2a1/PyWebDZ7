@@ -1,41 +1,43 @@
 from sqlalchemy import create_engine, func
-from sqlalchemy.orm import sessionmaker
-from models import Student, Grade, Subject, Group
+from sqlalchemy.orm import Session
+from models import Student, Grade
 
-engine = create_engine('sqlite:///C:\\Users\\katya\\Documents\\GitHub\\PyWebDZ7\\database.db', echo=True)
-Session = sessionmaker(bind=engine)
-session = Session()
+def my_select1():
+    DATABASE_URL = "sqlite:///database.db"
+    engine = create_engine(DATABASE_URL)
+    session = Session(engine)
 
-def select_1():
-    result = (
-        session.query(Student.name, func.avg(Grade.grade).label('avg_grade'))
-        .join(Grade)
-        .group_by(Student.id)
-        .order_by(func.desc('avg_grade'))
+    avg_grade_subquery = (
+        session.query(
+            Grade.student_id,
+            func.avg(Grade.grade).label("average_grade")
+        )
+        .group_by(Grade.student_id)
+        .subquery()
+    )
+
+    top_students_info = (
+        session.query(
+            Student.name.label("student_name"),
+            Student.id.label("student_id"),
+            avg_grade_subquery.c.average_grade.label("average_grade")
+        )
+        .join(avg_grade_subquery, Student.id == avg_grade_subquery.c.student_id)
+        .order_by(avg_grade_subquery.c.average_grade.desc())
         .limit(5)
         .all()
     )
-    print("Запит 1:")
-    for row in result:
-        print(row)
 
-def select_2(subject_id):
-    result = (
-        session.query(Student.name, func.avg(Grade.grade).label('avg_grade'))
-        .join(Grade)
-        .filter(Grade.subject_id == subject_id)
-        .group_by(Student.id)
-        .order_by(func.desc('avg_grade'))
-        .limit(1)
-        .all()
-    )
-    print("Запит 2:")
-    for row in result:
-        print(row)
+    session.close()
 
-# Додайте аналогічні функції для інших запитів (select_3, select_4, і так далі)
+    print("Запит 1")
+    print("-" * 40)
+    
+    for student_info in top_students_info:
+        print("{:<15} {:<10} {:<10.2f}".format(
+            student_info.student_name,
+            student_info.student_id,
+            student_info.average_grade
+        ))
 
-if __name__ == "__main__":
-    select_1()
-    select_2(subject_id=1)
-    # Викликайте інші функції тут, якщо потрібно
+my_select1()
